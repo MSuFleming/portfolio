@@ -153,74 +153,114 @@
     <div class="scroll-hint">Scroll horizontally or use navigation dots →</div>
 
     <script>
-        let currentSlide = 0;
-        const totalSlides = 5;
-        const container = document.getElementById('scrollContainer');
-        const navDots = document.querySelectorAll('.nav-dot');
+       let currentSlide = 0;
+const totalSlides = 5;
+const container = document.getElementById('scrollContainer');
+const navDots = document.querySelectorAll('.nav-dot');
+const isMobile = window.matchMedia('(max-width: 768px)').matches;
 
-        function updateNavigation() {
-            navDots.forEach((dot, index) => {
-                dot.classList.toggle('active', index === currentSlide);
-            });
+function updateNavigation() {
+    navDots.forEach((dot, index) => {
+        dot.classList.toggle('active', index === currentSlide);
+    });
+}
+
+function goToSlide(slideIndex) {
+    currentSlide = slideIndex;
+    if (!isMobile) {
+        const translateX = -(slideIndex * 100);
+        container.style.transform = `translateX(${translateX}vw)`;
+    } else {
+        // For mobile, scroll to the section instead of transforming
+        const slides = document.querySelectorAll('.slide');
+        slides[slideIndex].scrollIntoView({ behavior: 'smooth' });
+    }
+    updateNavigation();
+}
+
+// Only enable horizontal scroll effects for desktop
+if (!isMobile) {
+    // Horizontal scroll with mouse wheel
+    document.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        
+        if (e.deltaY > 0 && currentSlide < totalSlides - 1) {
+            currentSlide++;
+            goToSlide(currentSlide);
+        } else if (e.deltaY < 0 && currentSlide > 0) {
+            currentSlide--;
+            goToSlide(currentSlide);
         }
+    }, { passive: false });
 
-        function goToSlide(slideIndex) {
-            currentSlide = slideIndex;
-            const translateX = -(slideIndex * 100);
-            container.style.transform = `translateX(${translateX}vw)`;
+    // Touch/swipe support for mobile (only horizontal on desktop)
+    let startX = 0;
+    let startY = 0;
+
+    document.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+    });
+
+    document.addEventListener('touchend', (e) => {
+        const endX = e.changedTouches[0].clientX;
+        const endY = e.changedTouches[0].clientY;
+        const diffX = startX - endX;
+        const diffY = startY - endY;
+
+        // Only trigger if horizontal swipe is more significant than vertical
+        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+            if (diffX > 0 && currentSlide < totalSlides - 1) {
+                currentSlide++;
+                goToSlide(currentSlide);
+            } else if (diffX < 0 && currentSlide > 0) {
+                currentSlide--;
+                goToSlide(currentSlide);
+            }
+        }
+    });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' && currentSlide < totalSlides - 1) {
+            currentSlide++;
+            goToSlide(currentSlide);
+        } else if (e.key === 'ArrowLeft' && currentSlide > 0) {
+            currentSlide--;
+            goToSlide(currentSlide);
+        }
+    });
+}
+
+// For mobile, handle vertical scroll events
+if (isMobile) {
+    window.addEventListener('scroll', function() {
+        const slides = document.querySelectorAll('.slide');
+        let currentIndex = 0;
+        const scrollPosition = window.scrollY + (window.innerHeight / 2);
+        
+        slides.forEach((slide, index) => {
+            const slideTop = slide.offsetTop;
+            const slideHeight = slide.offsetHeight;
+            
+            if (scrollPosition >= slideTop && scrollPosition < slideTop + slideHeight) {
+                currentIndex = index;
+            }
+        });
+        
+        if (currentIndex !== currentSlide) {
+            currentSlide = currentIndex;
             updateNavigation();
         }
-
-        // Horizontal scroll with mouse wheel
-        document.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            
-            if (e.deltaY > 0 && currentSlide < totalSlides - 1) {
-                currentSlide++;
-                goToSlide(currentSlide);
-            } else if (e.deltaY < 0 && currentSlide > 0) {
-                currentSlide--;
-                goToSlide(currentSlide);
-            }
-        }, { passive: false });
-
-        // Touch/swipe support for mobile
-        let startX = 0;
-        let startY = 0;
-
-        document.addEventListener('touchstart', (e) => {
-            startX = e.touches[0].clientX;
-            startY = e.touches[0].clientY;
+    });
+    
+    // Make dots clickable to scroll to sections
+    navDots.forEach((dot, index) => {
+        dot.addEventListener('click', function() {
+            goToSlide(index);
         });
-
-        document.addEventListener('touchend', (e) => {
-            const endX = e.changedTouches[0].clientX;
-            const endY = e.changedTouches[0].clientY;
-            const diffX = startX - endX;
-            const diffY = startY - endY;
-
-            // Only trigger if horizontal swipe is more significant than vertical
-            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
-                if (diffX > 0 && currentSlide < totalSlides - 1) {
-                    currentSlide++;
-                    goToSlide(currentSlide);
-                } else if (diffX < 0 && currentSlide > 0) {
-                    currentSlide--;
-                    goToSlide(currentSlide);
-                }
-            }
-        });
-
-        // Keyboard navigation
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight' && currentSlide < totalSlides - 1) {
-                currentSlide++;
-                goToSlide(currentSlide);
-            } else if (e.key === 'ArrowLeft' && currentSlide > 0) {
-                currentSlide--;
-                goToSlide(currentSlide);
-            }
-        });
+    });
+}
     </script>
 </body>
 </html>
